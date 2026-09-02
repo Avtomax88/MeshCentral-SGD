@@ -17,6 +17,13 @@ console.log('serviceguardian: JS-файл плагина загружен в б�
 function serviceguardian() {
 	var obj = {};
 
+	// Обязательный список функций, которые MeshCentral должен передать в
+	// браузерный (Web UI) слой. Без этого объявления, судя по всему, клиент
+	// вообще ничего не получает — этим, скорее всего, и объяснялось полное
+	// отсутствие логов в консоли, включая самый первый (файл до браузера
+	// не долетал в рабочем виде).
+	obj.exports = ['onWebUIStartupEnd', 'goPageEnd', 'registerPluginTab', 'onDeviceRefreshEnd'];
+
 	// ---------- Кнопка на главной странице (перед "My Server") ----------
 
 	obj.onWebUIStartupEnd = function () {
