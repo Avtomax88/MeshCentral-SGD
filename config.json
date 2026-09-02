@@ -1,0 +1,18 @@
+{
+  "name": "Service Guardian Dashboard",
+  "shortName": "serviceguardian",
+  "version": "1.0.0",
+  "author": "Supporthound",
+  "description": "Встраивает Service Guardian Dashboard в интерфейс MeshCentral: кнопку на главной странице и вкладку на странице устройства.",
+  "hasAdminPanel": false,
+  "homepage": "https://github.com/Avtomax88/MeshCentral-SGD",
+  "changelogUrl": "https://raw.githubusercontent.com/Avtomax88/MeshCentral-SGD/main/changelog.md",
+  "configUrl": "https://raw.githubusercontent.com/Avtomax88/MeshCentral-SGD/main/config.json",
+  "downloadUrl": "https://github.com/Avtomax88/MeshCentral-SGD/archive/main.zip",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Avtomax88/MeshCentral-SGD.git"
+  },
+  "versionHistoryUrl": "https://api.github.com/repos/Avtomax88/MeshCentral-SGD/tags",
+  "meshCentralCompat": ">1.1.0"
+}
