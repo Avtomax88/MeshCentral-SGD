@@ -119,6 +119,13 @@ function serviceguardian() {
 	// onWebUIStartupEnd при первом же старте страницы).
 	obj.goPageEnd = function () {
 		try { if (window.sgAddLeftbarButton) window.sgAddLeftbarButton(); } catch (e) { /* тихо игнорируем */ }
+		// Пользователь перешёл в другой раздел MeshCentral — закрываем
+		// открытый оверлей дашборда, если он есть, чтобы не оставался
+		// висеть поверх/позади нового раздела.
+		try {
+			var overlay = document.getElementById('sg-frame-overlay');
+			if (overlay) overlay.style.display = 'none';
+		} catch (e) { /* тихо игнорируем */ }
 	};
 
 	// ---------- Вкладка на странице устройства ----------
