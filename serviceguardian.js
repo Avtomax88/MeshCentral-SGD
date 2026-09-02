@@ -9,12 +9,18 @@
 // Правь эту константу под свой адрес дашборда:
 var SG_DASHBOARD_URL = 'https://sgd.supporthound.ru';
 
+// Диагностика: если этой строки нет в консоли браузера — значит сам файл
+// плагина до браузера не долетает вообще (проблема на уровне MeshCentral/
+// плагина, ещё до наших хуков), и дальше смотреть в этом файле нечего.
+console.log('serviceguardian: JS-файл плагина загружен в браузере');
+
 function serviceguardian() {
 	var obj = {};
 
 	// ---------- Кнопка на главной странице (перед "My Server") ----------
 
 	obj.onWebUIStartupEnd = function () {
+		console.log('serviceguardian: onWebUIStartupEnd сработал');
 		try { sgAddLeftbarButton(); } catch (e) { console.log('serviceguardian: onWebUIStartupEnd error', e); }
 	};
 
@@ -29,47 +35,30 @@ function serviceguardian() {
 	function sgAddLeftbarButton() {
 		if (document.getElementById('sg-leftbar-btn')) return; // уже добавлена
 
-		var leftbar = document.getElementById('page_leftbar');
-		if (!leftbar) return;
-
-		// Ищем существующий пункт "My Server", чтобы вставить кнопку перед
-		// ним и скопировать его разметку/стили — так кнопка будет выглядеть
-		// "родной", даже если мы не знаем точные CSS-классы заранее.
-		var candidates = leftbar.querySelectorAll('div, li, a, span');
-		var myServerItem = null;
-		for (var i = 0; i < candidates.length; i++) {
-			var el = candidates[i];
-			if (el.children.length === 0 && el.textContent && el.textContent.trim() === 'My Server') {
-				// Поднимаемся до кликабельного контейнера пункта меню (обычно
-				// это ближайший родитель с onclick или ролью кнопки).
-				var container = el;
-				var hops = 0;
-				while (container.parentElement && hops < 4 && !container.onclick && container.getAttribute('onclick') == null) {
-					container = container.parentElement;
-					hops++;
-				}
-				myServerItem = container;
-				break;
-			}
-		}
-
+		// В этой версии MeshCentral пункты левого меню — иконки без текста,
+		// но у пункта "My Server" есть стабильный id, цепляемся за него
+		// напрямую (надёжнее, чем искать по тексту, которого тут нет).
+		var myServerItem = document.getElementById('LeftMenuMyServer');
 		if (!myServerItem) {
-			console.log('serviceguardian: пункт меню "My Server" не найден — сборка левого меню в этой версии MeshCentral отличается, кнопку добавить не удалось. Сообщите об этом с содержимым #page_leftbar из консоли.');
+			console.log('serviceguardian: элемент #LeftMenuMyServer не найден — структура левого меню в этой версии MeshCentral отличается.');
 			return;
 		}
 
 		var btn = myServerItem.cloneNode(true);
 		btn.id = 'sg-leftbar-btn';
 		btn.removeAttribute('onclick');
+		btn.removeAttribute('onkeypress');
+		btn.removeAttribute('data-target');
+		btn.classList.remove('active');
+		btn.title = 'Service Guardian Dashboard';
+		btn.setAttribute('aria-label', 'Service Guardian Dashboard');
 
-		// Меняем текст на "Guardian" в самом глубоком текстовом узле.
-		var walker = document.createTreeWalker(btn, NodeFilter.SHOW_TEXT, null);
-		var textNode;
-		while ((textNode = walker.nextNode())) {
-			if (textNode.nodeValue.trim() === 'My Server') {
-				textNode.nodeValue = textNode.nodeValue.replace('My Server', 'Guardian');
-			}
-		}
+		// Своя иконка (щит с галочкой) вместо иконки сервера — чтобы не
+		// путать визуально с "My Server".
+		btn.innerHTML = '<svg viewBox="0 0 32 32" width="20" height="20" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
+			+ '<path d="M16 3 L27 7 V16 C27 22.5 22 27.5 16 29 C10 27.5 5 22.5 5 16 V7 Z" fill="currentColor"/>'
+			+ '<path d="M11 16.5 L14.3 19.8 L21 12.5" stroke="#0b0e14" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+			+ '</svg>';
 
 		btn.addEventListener('click', function (e) {
 			e.preventDefault();
@@ -78,6 +67,7 @@ function serviceguardian() {
 		}, true);
 
 		myServerItem.parentNode.insertBefore(btn, myServerItem);
+		console.log('serviceguardian: кнопка добавлена в левое меню');
 	}
 
 	// Полноэкранный оверлей с iframe — не зависит от внутренней разметки
@@ -117,10 +107,12 @@ function serviceguardian() {
 	// ---------- Вкладка на странице устройства ----------
 
 	obj.registerPluginTab = function () {
+		console.log('serviceguardian: registerPluginTab сработал');
 		return { tabId: 'serviceguardian', tabTitle: 'Guardian' };
 	};
 
 	obj.onDeviceRefreshEnd = function () {
+		console.log('serviceguardian: onDeviceRefreshEnd сработал');
 		try { sgFillDeviceTab(); } catch (e) { console.log('serviceguardian: onDeviceRefreshEnd error', e); }
 	};
 
