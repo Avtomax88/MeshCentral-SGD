@@ -12,7 +12,7 @@
 // а функции внутри serviceguardian() только вызывают эти глобальные.
 //
 // Правь эту константу под свой адрес дашборда:
-var SG_DASHBOARD_URL = 'https://sgd.supporthound.ru';
+window.SG_DASHBOARD_URL = 'https://sgd.supporthound.ru';
 
 // Диагностика: если этой строки нет в консоли браузера — значит сам файл
 // плагина до браузера не долетает вообще.
@@ -20,7 +20,7 @@ console.log('serviceguardian: JS-файл плагина загружен в б�
 
 // ---------- Кнопка на главной странице (перед "My Server") ----------
 
-function sgAddLeftbarButton() {
+window.sgAddLeftbarButton = function () {
 	if (document.getElementById('sg-leftbar-btn')) return; // уже добавлена
 
 	// В этой версии MeshCentral пункты левого меню — иконки без текста,
@@ -51,17 +51,17 @@ function sgAddLeftbarButton() {
 	btn.addEventListener('click', function (e) {
 		e.preventDefault();
 		e.stopPropagation();
-		sgShowFrame(SG_DASHBOARD_URL + '/');
+		window.sgShowFrame(window.SG_DASHBOARD_URL + '/');
 	}, true);
 
 	myServerItem.parentNode.insertBefore(btn, myServerItem);
 	console.log('serviceguardian: кнопка добавлена в левое меню');
-}
+};
 
 // Полноэкранный оверлей с iframe — не зависит от внутренней разметки
 // MeshCentral (надёжнее, чем пытаться встроиться в конкретную область
 // страницы, которая может быть занята текущим видом).
-function sgShowFrame(url) {
+window.sgShowFrame = function (url) {
 	var existing = document.getElementById('sg-frame-overlay');
 	if (existing) {
 		existing.style.display = 'flex';
@@ -90,11 +90,11 @@ function sgShowFrame(url) {
 	overlay.appendChild(bar);
 	overlay.appendChild(iframe);
 	document.body.appendChild(overlay);
-}
+};
 
 // ---------- Вкладка на странице устройства ----------
 
-function sgFillDeviceTab() {
+window.sgFillDeviceTab = function () {
 	var tabDiv = document.getElementById('serviceguardian');
 	if (!tabDiv) return;
 
@@ -114,8 +114,8 @@ function sgFillDeviceTab() {
 	var shortId = nodeId.indexOf('/') >= 0 ? nodeId.substring(nodeId.lastIndexOf('/') + 1) : nodeId;
 
 	tabDiv.innerHTML = '<iframe id="sg-device-frame" style="width:100%; height:78vh; border:none;"></iframe>';
-	document.getElementById('sg-device-frame').src = SG_DASHBOARD_URL + '/by-mesh/' + encodeURIComponent(shortId);
-}
+	document.getElementById('sg-device-frame').src = window.SG_DASHBOARD_URL + '/by-mesh/' + encodeURIComponent(shortId);
+};
 
 // ---------- Обёртка плагина, которую MeshCentral require()-ит на сервере
 // и (частично, через exports) выполняет в браузере ----------
@@ -129,14 +129,14 @@ function serviceguardian() {
 
 	obj.onWebUIStartupEnd = function () {
 		console.log('serviceguardian: onWebUIStartupEnd сработал');
-		try { sgAddLeftbarButton(); } catch (e) { console.log('serviceguardian: onWebUIStartupEnd error', e); }
+		try { window.sgAddLeftbarButton(); } catch (e) { console.log('serviceguardian: onWebUIStartupEnd error', e); }
 	};
 
 	// goPageEnd вызывается при каждой смене страницы — на случай, если
 	// левое меню перерисовывается после первой загрузки (например, после
 	// логина); функция сама проверяет, не добавлена ли кнопка уже.
 	obj.goPageEnd = function () {
-		try { sgAddLeftbarButton(); } catch (e) { /* тихо игнорируем */ }
+		try { window.sgAddLeftbarButton(); } catch (e) { /* тихо игнорируем */ }
 	};
 
 	obj.registerPluginTab = function () {
@@ -146,7 +146,7 @@ function serviceguardian() {
 
 	obj.onDeviceRefreshEnd = function () {
 		console.log('serviceguardian: onDeviceRefreshEnd сработал');
-		try { sgFillDeviceTab(); } catch (e) { console.log('serviceguardian: onDeviceRefreshEnd error', e); }
+		try { window.sgFillDeviceTab(); } catch (e) { console.log('serviceguardian: onDeviceRefreshEnd error', e); }
 	};
 
 	return obj;
