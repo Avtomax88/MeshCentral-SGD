@@ -13,7 +13,7 @@
 function serviceguardian() {
 	var obj = {};
 
-	obj.exports = ['onWebUIStartupEnd', 'goPageEnd', 'registerPluginTab', 'onDeviceRefreshEnd'];
+	obj.exports = ['onWebUIStartupEnd', 'goPageEnd', 'onDeviceRefreshEnd'];
 
 	// ---------- Кнопка на главной странице (перед "My Server") ----------
 
@@ -123,28 +123,27 @@ function serviceguardian() {
 
 	// ---------- Вкладка на странице устройства ----------
 
-	obj.registerPluginTab = function () {
-		return { tabId: 'serviceguardian', tabTitle: 'Guardian' };
-	};
+	// registerPluginTab — это готовый метод самого pluginHandler (нужно его
+	// ПОЗВАТЬ), а не хук, который framework сам ищет по имени — этим и
+	// объяснялось, почему вкладка не появлялась раньше. Вызываем его прямо
+	// внутри onDeviceRefreshEnd, куда MeshCentral и так передаёт nodeid
+	// первым аргументом (надёжнее, чем читать глобальную currentNode).
+	obj.onDeviceRefreshEnd = function (nodeid, panel, refresh, event) {
+		console.log('serviceguardian: onDeviceRefreshEnd сработал, nodeid=', nodeid);
+		try {
+			pluginHandler.registerPluginTab({ tabId: 'serviceguardian', tabTitle: 'Guardian' });
+		} catch (e) { console.log('serviceguardian: registerPluginTab error', e); }
 
-	obj.onDeviceRefreshEnd = function () {
-		console.log('serviceguardian: onDeviceRefreshEnd сработал');
 		try {
 			var tabDiv = document.getElementById('serviceguardian');
 			if (!tabDiv) return;
 
-			// currentNode — глобальная переменная MeshCentral с данными
-			// выбранного устройства (currentNode._id содержит ID узла
-			// вида "node//xxxxx").
-			var node = (typeof currentNode !== 'undefined') ? currentNode : null;
-			var nodeId = node && (node._id || node.nodeid || node.id);
-
-			if (!nodeId) {
+			if (!nodeid) {
 				tabDiv.innerHTML = '<p style="padding:16px; font-family:sans-serif; color:#888;">Не удалось определить ID этого устройства для Service Guardian.</p>';
 				return;
 			}
 
-			var shortId = nodeId.indexOf('/') >= 0 ? nodeId.substring(nodeId.lastIndexOf('/') + 1) : nodeId;
+			var shortId = nodeid.indexOf('/') >= 0 ? nodeid.substring(nodeid.lastIndexOf('/') + 1) : nodeid;
 
 			tabDiv.innerHTML = '<iframe id="sg-device-frame" style="width:100%; height:78vh; border:none;"></iframe>';
 			document.getElementById('sg-device-frame').src = 'https://sgd.supporthound.ru/by-mesh/' + encodeURIComponent(shortId);
