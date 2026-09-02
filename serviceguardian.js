@@ -2,21 +2,17 @@
 //
 // ВАЖНО (выяснено экспериментально): MeshCentral вытаскивает и выполняет
 // в браузере ТОЛЬКО код функций, перечисленных в obj.exports — вообще
-// ничего больше из этого файла (ни другие функции, ни переменные верхнего
-// уровня) в браузер не попадает. Поэтому каждая функция-хук здесь —
-// полностью самодостаточна: не вызывает никаких других функций из этого
-// файла и не ссылается на переменные, объявленные вне себя. Всё нужное
-// либо продублировано внутри каждой функции, либо кладётся в window
-// самой этой функцией при первом же вызове.
+// ничего больше из этого файла в браузер не попадает. Поэтому каждая
+// функция-хук здесь полностью самодостаточна.
 //
-// Правь адрес дашборда здесь — он продублирован в нескольких местах ниже:
-// https://sgd.supporthound.ru
+// Встраивание дашборда в <iframe> работает только потому, что в config.json
+// MeshCentral добавлен кастомный заголовок httpHeaders → Content-Security-Policy
+// с explicit добавлением домена дашборда в frame-src — без этого MeshCentral
+// сам блокирует встраивание любых сторонних доменов в свой интерфейс.
 
 function serviceguardian() {
 	var obj = {};
 
-	// Обязательный список функций, которые MeshCentral передаёт в браузерный
-	// (Web UI) слой.
 	obj.exports = ['onWebUIStartupEnd', 'goPageEnd', 'registerPluginTab', 'onDeviceRefreshEnd'];
 
 	// ---------- Кнопка на главной странице (перед "My Server") ----------
@@ -32,11 +28,12 @@ function serviceguardian() {
 				if (existing) {
 					existing.style.display = 'flex';
 					existing.querySelector('iframe').src = url;
+					window.sgPositionFrame();
 					return;
 				}
 				var overlay = document.createElement('div');
 				overlay.id = 'sg-frame-overlay';
-				overlay.style.cssText = 'position:fixed; inset:0; z-index:100000; background:#0b0e14; display:flex; flex-direction:column;';
+				overlay.style.cssText = 'position:fixed; z-index:100000; background:#0b0e14; display:flex; flex-direction:column;';
 
 				var bar = document.createElement('div');
 				bar.style.cssText = 'flex:0 0 auto; padding:10px 16px; background:#131722; border-bottom:1px solid #232a3a; display:flex; align-items:center; justify-content:space-between; font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;';
@@ -55,6 +52,29 @@ function serviceguardian() {
 				overlay.appendChild(bar);
 				overlay.appendChild(iframe);
 				document.body.appendChild(overlay);
+				window.sgPositionFrame();
+				window.addEventListener('resize', window.sgPositionFrame);
+			};
+
+			// Вычисляет границы рабочей области MeshCentral (правее левой
+			// иконочной панели, ниже верхней синей плашки) и подгоняет под
+			// них оверлей — вместо того чтобы занимать весь экран поверх
+			// всего интерфейса.
+			window.sgPositionFrame = function () {
+				var overlay = document.getElementById('sg-frame-overlay');
+				var leftbar = document.getElementById('page_leftbar');
+				if (!overlay) return;
+
+				var top = 0, left = 0;
+				if (leftbar) {
+					var rect = leftbar.getBoundingClientRect();
+					top = Math.round(rect.top);
+					left = Math.round(rect.right);
+				}
+				overlay.style.top = top + 'px';
+				overlay.style.left = left + 'px';
+				overlay.style.right = '0';
+				overlay.style.bottom = '0';
 			};
 
 			window.sgAddLeftbarButton = function () {
@@ -75,7 +95,7 @@ function serviceguardian() {
 				btn.title = 'Service Guardian Dashboard';
 				btn.setAttribute('aria-label', 'Service Guardian Dashboard');
 
-				btn.innerHTML = '<svg viewBox="0 0 32 32" width="40" height="40" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
+				btn.innerHTML = '<svg viewBox="0 0 32 32" width="50" height="50" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
 					+ '<path d="M16 3 L27 7 V16 C27 22.5 22 27.5 16 29 C10 27.5 5 22.5 5 16 V7 Z" fill="currentColor"/>'
 					+ '<path d="M11 16.5 L14.3 19.8 L21 12.5" stroke="#0b0e14" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
 					+ '</svg>';
@@ -96,8 +116,7 @@ function serviceguardian() {
 
 	// goPageEnd — при смене страницы левое меню может перерисоваться;
 	// window.sgAddLeftbarButton к этому моменту уже определена (её создаёт
-	// onWebUIStartupEnd при первом же старте страницы), поэтому здесь
-	// достаточно просто вызвать её ещё раз, если она уже есть.
+	// onWebUIStartupEnd при первом же старте страницы).
 	obj.goPageEnd = function () {
 		try { if (window.sgAddLeftbarButton) window.sgAddLeftbarButton(); } catch (e) { /* тихо игнорируем */ }
 	};
@@ -115,8 +134,8 @@ function serviceguardian() {
 			if (!tabDiv) return;
 
 			// currentNode — глобальная переменная MeshCentral с данными
-			// выбранного устройства (подтверждено в консоли: currentNode._id
-			// содержит ID узла вида "node//xxxxx").
+			// выбранного устройства (currentNode._id содержит ID узла
+			// вида "node//xxxxx").
 			var node = (typeof currentNode !== 'undefined') ? currentNode : null;
 			var nodeId = node && (node._id || node.nodeid || node.id);
 
@@ -137,9 +156,6 @@ function serviceguardian() {
 
 // На сервере (Node.js) "module" существует — экспортируем функцию под
 // именем shortName, как того требует require(...)[plugin.shortName].
-// В браузере "module" не определён — эта строка там не выполняется вовсе
-// (см. вводный комментарий: браузер выполняет только тела функций из
-// obj.exports, а не остальной код файла).
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports.serviceguardian = serviceguardian;
 }
