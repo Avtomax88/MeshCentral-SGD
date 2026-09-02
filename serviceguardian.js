@@ -95,7 +95,7 @@ function serviceguardian() {
 				btn.title = 'Service Guardian Dashboard';
 				btn.setAttribute('aria-label', 'Service Guardian Dashboard');
 
-				btn.innerHTML = '<svg viewBox="0 0 32 32" width="35" height="35" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
+				btn.innerHTML = '<svg viewBox="0 0 32 32" width="30" height="30" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
 					+ '<path d="M16 3 L27 7 V16 C27 22.5 22 27.5 16 29 C10 27.5 5 22.5 5 16 V7 Z" fill="currentColor"/>'
 					+ '<path d="M11 16.5 L14.3 19.8 L21 12.5" stroke="#0b0e14" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
 					+ '</svg>';
