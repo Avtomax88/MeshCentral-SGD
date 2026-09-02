@@ -151,3 +151,11 @@ function serviceguardian() {
 
 	return obj;
 }
+
+// MeshCentral использует этот же файл двояко: на сервере через
+// require(...)[shortName] (отсюда и была ошибка "is not a function" —
+// без экспорта require() возвращал пустой объект), и в браузере, где
+// объект "module" не существует — поэтому экспорт оборачиваем проверкой.
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports.serviceguardian = serviceguardian;
+}

@@ -1,7 +1,7 @@
 {
   "name": "Service Guardian Dashboard",
   "shortName": "serviceguardian",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Supporthound",
   "description": "Встраивает Service Guardian Dashboard в интерфейс MeshCentral: кнопку на главной странице и вкладку на странице устройства.",
   "hasAdminPanel": false,
