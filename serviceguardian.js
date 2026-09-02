@@ -95,7 +95,7 @@ function serviceguardian() {
 				btn.title = 'Service Guardian Dashboard';
 				btn.setAttribute('aria-label', 'Service Guardian Dashboard');
 
-				btn.innerHTML = '<svg viewBox="0 0 32 32" width="35" height="35" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
+				btn.innerHTML = '<svg viewBox="0 0 32 32" width="50" height="50" style="display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">'
 					+ '<path d="M16 3 L27 7 V16 C27 22.5 22 27.5 16 29 C10 27.5 5 22.5 5 16 V7 Z" fill="currentColor"/>'
 					+ '<path d="M11 16.5 L14.3 19.8 L21 12.5" stroke="#0b0e14" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
 					+ '</svg>';
@@ -144,9 +144,57 @@ function serviceguardian() {
 			}
 
 			var shortId = nodeid.indexOf('/') >= 0 ? nodeid.substring(nodeid.lastIndexOf('/') + 1) : nodeid;
+			var F = '-apple-system,Segoe UI,Roboto,Arial,sans-serif';
 
-			tabDiv.innerHTML = '<iframe id="sg-device-frame" style="width:100%; height:78vh; border:none;"></iframe>';
+			tabDiv.innerHTML =
+				'<div id="sg-ctrl" style="padding:10px 14px; background:#f2f3f5; border-bottom:1px solid #ccc; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-family:' + F + ';">'
+				+ '<b style="font-size:12px; white-space:nowrap;">Управление службой:</b>'
+				+ '<input type="text" id="sg-svc-name" placeholder="Имя службы (Service Name)" style="padding:5px 8px; border:1px solid #999; border-radius:4px; width:220px; font-size:12px;">'
+				+ '<button id="sg-svc-start" style="padding:5px 12px; border:1px solid #2C8C5A; background:#eafff0; color:#1a6b3c; border-radius:4px; cursor:pointer; font-size:12px;">&#9654; Start</button>'
+				+ '<button id="sg-svc-stop" style="padding:5px 12px; border:1px solid #C8362B; background:#fff0ef; color:#a5271e; border-radius:4px; cursor:pointer; font-size:12px;">&#9632; Stop</button>'
+				+ '<button id="sg-svc-restart" style="padding:5px 12px; border:1px solid #B8741A; background:#fff8e8; color:#8a5711; border-radius:4px; cursor:pointer; font-size:12px;">&#8635; Restart</button>'
+				+ '<span id="sg-svc-status" style="font-size:12px; color:#666;"></span>'
+				+ '</div>'
+				+ '<iframe id="sg-device-frame" style="width:100%; height:70vh; border:none; display:block;"></iframe>';
+
 			document.getElementById('sg-device-frame').src = 'https://sgd.supporthound.ru/by-mesh/' + encodeURIComponent(shortId);
+
+			// Отправляет команду управления службой через встроенный в
+			// MeshCentral канал выполнения команд на агенте (тот же самый,
+			// которым пользуется сам MeshCentral и, например, плагин Quick
+			// Commands) — управление идёт средствами самого MeshCentral, наш
+			// дашборд тут ни при чём, он остаётся только для мониторинга.
+			function sgRunServiceCmd(verb, forceFlag) {
+				var input = document.getElementById('sg-svc-name');
+				var status = document.getElementById('sg-svc-status');
+				var name = input ? input.value.trim() : '';
+				if (!name) {
+					if (status) status.textContent = 'Укажите имя службы (Service Name, не Display Name)';
+					return;
+				}
+				if ((typeof meshserver === 'undefined') || (typeof meshserver.send !== 'function')) {
+					if (status) status.textContent = 'Не удалось найти канал MeshCentral для отправки команды';
+					return;
+				}
+				var safeName = name.replace(/"/g, '');
+				var cmd = verb + ' -Name "' + safeName + '"' + (forceFlag ? ' -Force' : '') + '\r\n';
+				var rid = 'sg-' + Math.random().toString(36).substring(2, 12);
+
+				if (status) status.textContent = 'Отправляю команду...';
+				try {
+					meshserver.send({ action: 'runcommands', nodeids: [nodeid], type: 2, cmds: cmd, runAsUser: 0, reply: true, responseid: rid });
+					if (status) status.textContent = 'Команда отправлена агенту. Результат смотри в статусе службы ниже (обновится через несколько секунд) или во вкладке Terminal/Events.';
+				} catch (e) {
+					if (status) status.textContent = 'Ошибка отправки: ' + e;
+				}
+			}
+
+			var startBtn = document.getElementById('sg-svc-start');
+			var stopBtn = document.getElementById('sg-svc-stop');
+			var restartBtn = document.getElementById('sg-svc-restart');
+			if (startBtn) startBtn.addEventListener('click', function () { sgRunServiceCmd('Start-Service', false); });
+			if (stopBtn) stopBtn.addEventListener('click', function () { sgRunServiceCmd('Stop-Service', true); });
+			if (restartBtn) restartBtn.addEventListener('click', function () { sgRunServiceCmd('Restart-Service', true); });
 		} catch (e) { console.log('serviceguardian: onDeviceRefreshEnd error', e); }
 	};
 
