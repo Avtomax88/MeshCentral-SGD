@@ -181,7 +181,7 @@ function serviceguardian() {
 				+ '</div>'
 				+ '<iframe id="sg-device-frame" style="width:100%; height:70vh; border:none; display:block;"></iframe>';
 
-			document.getElementById('sg-device-frame').src = 'https://sgd.supporthound.ru/by-mesh/' + encodeURIComponent(shortId);
+			document.getElementById('sg-device-frame').src = 'https://sgd.supporthound.ru/by-mesh/' + encodeURIComponent(shortId) + '?embed=tab';
 
 			// Отправляет команду управления службой через встроенный в
 			// MeshCentral канал выполнения команд на агенте (тот же самый,
